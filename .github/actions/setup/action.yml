@@ -1,0 +1,7 @@
+name: Setup
+
+runs:
+  using: composite
+  steps:
+    - uses: taiki-e/install-action@just
+    - uses: mlugg/setup-zig@v2

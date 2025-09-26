@@ -1,57 +1,47 @@
-name: CI
+name: Checks
 
-permissions: {}
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
 
 on:
-  workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize]
-    paths-ignore:
-      - "**/*.md"
   push:
     branches:
       - main
-    paths-ignore:
-      - "**/*.md"
+  pull_request:
+  merge_group:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.ref_name != 'main' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number}}
+  cancel-in-progress: true
 
 jobs:
+  automated-fixes:
+    name: Automated fixes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Format files
+        run: just fmt
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "`just fmt`"
+
   test:
-    name: Test
+    name: Tests
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: windows-latest
-          - os: macos-latest
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
-      - uses: oxc-project/setup-rust@cd82e1efec7fef815e2c23d296756f31c7cdc03d # v1.0.0
-        with:
-          save-cache: ${{ github.ref_name == 'main' }}
-      - run: cargo check --all-targets --all-features
-      - run: cargo test
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
-
-      - uses: oxc-project/setup-rust@cd82e1efec7fef815e2c23d296756f31c7cdc03d # v1.0.0
-        with:
-          components: clippy rust-docs rustfmt
-
-      - run: |
-          cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --document-private-items
-
-      - uses: crate-ci/typos@master
-        with:
-          files: .
+      - name: Run tests
+        run: just test

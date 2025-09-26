@@ -1,23 +1,47 @@
-# fast-glob
+<p align="center">
+  <h3 align="center">fast-glob</h3>
+</p>
 
-## Introduce
+---
 
-A high-performance glob matching crate for Rust based on [`devongovett/glob-match`](https://github.com/devongovett/glob-match).
+<div align="center">
 
-**Key Features:**
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/ixion-labs/fast-glob)
 
-- Up to 60% performance improvement.
-- Supports more complete and well-rounded features.
+</div>
 
-## Examples
+---
 
-```rust
-use fast_glob::glob_match;
+This library is a Zig port of the [`oxc` fork](https://github.com/oxc-project/fast-glob) of [`devongovett/glob-match`](https://github.com/devongovett/glob-match).
 
-let glob = "some/**/n*d[k-m]e?txt";
-let path = "some/a/bigger/path/to/the/crazy/needle.txt";
+The logic was mostly ported from Rust to Zig almost exclusively by Claude Sonnet 4. Each line almost identically maps over between the two versions with slight adjustments for Zig syntax and semantics.
 
-assert!(glob_match(glob, path));
+## Installation
+
+Add the library to your Zig project.
+
+```sh
+zig fetch --save=fast_glob git+https://github.com/ixion-labs/fast-glob
+```
+
+Then, in your `build.zig`, add the library to your exe or lib target.
+
+```zig
+main_exe.root_module.addImport(
+    "fast_glob",
+    b.dependency("fast_glob", .{ .target = target, .optimize = optimize }).module("fast_glob"),
+);
+```
+
+## Usage
+
+```zig
+const fast_glob = @import("fast_glob");
+
+const is_match = try fast_glob.match(
+    "some/**/n*d[k-m]e?txt",
+    "some/a/bigger/path/to/the/crazy/needle.txt",
+);
 ```
 
 ## Syntax
@@ -32,54 +56,7 @@ assert!(glob_match(glob, path));
 | `!`     | When at the start of the glob, this negates the result. Multiple `!` characters negate the glob multiple times.                                                                                     |
 | `\`     | A backslash character may be used to escape any of the above special characters.                                                                                                                    |
 
-## Benchmark
-
-### Test Case 1
-
-```rust
-const GLOB: &'static str = "some/**/n*d[k-m]e?txt";
-const PATH: &'static str = "some/a/bigger/path/to/the/crazy/needle.txt";
-```
-
-```
-mine                       time:   [84.413 ns 84.548 ns 84.661 ns]
-glob                       time:   [398.63 ns 399.36 ns 400.10 ns]
-globset                    time:   [30.919 µs 30.942 µs 30.976 µs]
-glob_match                 time:   [224.16 ns 224.57 ns 225.03 ns]
-glob_pre_compiled          time:   [78.929 ns 79.362 ns 79.801 ns]
-globset_pre_compiled       time:   [103.17 ns 103.22 ns 103.27 ns]
-wax                        time:   [84.712 µs 84.831 µs 84.953 µs]
-wax-pre-compiled           time:   [43.661 ns 43.679 ns 43.701 ns]
-```
-
-### Test Case 2
-
-```rust
-const GLOB: &'static str = "some/**/{tob,crazy}/?*.{png,txt}";
-const PATH: &'static str = "some/a/bigger/path/to/the/crazy/needle.txt";
-```
-
-```
-mine                       time:   [188.01 ns 188.40 ns 188.79 ns]
-globset                    time:   [38.565 µs 38.684 µs 38.841 µs]
-glob_match                 time:   [381.81 ns 383.12 ns 384.43 ns]
-globset_pre_compiled       time:   [103.29 ns 103.35 ns 103.42 ns]
-wax                        time:   [107.04 µs 107.38 µs 107.78 µs]
-wax-pre-compiled           time:   [43.665 ns 43.764 ns 43.918 ns]
-```
-
-## FAQ
-
-### Why not use the more efficient `glob_match` for brace expansion?
-
-`glob_match` is unable to handle complex brace expansions. Below are some failed examples:
-
-- `glob_match("{a/b,a/b/c}/c", "a/b/c")`
-- `glob_match("**/foo{bar,b*z}", "foobuzz")`
-- `glob_match("**/{a,b}/c.png", "some/a/b/c.png")`
-
-Due to these limitations, `brace expansion` requires a different implementation that can handle the complexity of such patterns, without any performance compromise.
-
 ## Credits
 
+- The [fast-glob](https://github.com/oxc-project/fast-glob) fork created by the `oxc` team.
 - The [glob-match](https://github.com/devongovett/glob-match) project created by [@devongovett](https://github.com/devongovett) which is an extremely fast glob matching library in Rust.
